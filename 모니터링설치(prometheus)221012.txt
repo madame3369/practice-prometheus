@@ -1,0 +1,51 @@
+
+#프로메테우스 & 그라파나 설치
+#깃 클론
+git clone https://github.com/prometheus-operator/kube-prometheus.git
+
+#확장팩(커스텀관련리소스)
+kubectl create -f manifests/setup
+#관련 리소스 있는지 여부 확인
+until kubectl get servicemonitors --all-namespaces ; do date; sleep 1; echo ""; done
+
+No resources found
+#프로테메우스&그라파나 설치
+kubectl create -f manifests/
+
+##설치 후 세팅관련
+##https://kangwoo.kr/2020/06/20/kubernetes-monitoring-3-kube-prometheus-%EC%84%A4%EC%B9%98-%ED%9B%84-%ED%95%B4%EC%95%BC-%ED%95%A0%EC%9D%BC/
+##https://kangwoo.kr/2020/06/20/kubernetes-monitoring-3-kube-prometheus-%ec%84%a4%ec%b9%98-%ed%9b%84-%ed%95%b4%ec%95%bc-%ed%95%a0%ec%9d%bc/2/
+
+#프로메테우스 PV 세팅
+cd /home/hduser/kwall/prometheus-yaml
+kubectl apply -f prometheus-pv-0.yaml
+kubectl apply -f prometheus-pv-1.yaml
+
+##retention time 값 수정하기
+##https://github.com/prometheus-operator/prometheus-operator/blob/22aaf848a27f6e45702131e22a596778686068d5/Documentation/api.md#prometheusspec
+##https://github.com/prometheus-operator/kube-prometheus/issues/840
+
+vi /home/hduser/kwall/kube-prometheus/manifests/prometheus-prometheus.yaml
+
+retention: '10y'
+storage:
+  volumeClaimTemplate:
+    spec:
+      resources:
+        requests:
+          storage: 20Gi
+      storageClassName: local-storage
+
+
+kubectl delete -f prometheus-prometheus.yaml
+kubectl apply -f prometheus-prometheus.yaml
+
+
+
+#helm 패키지 ubuntu용 설치 명령어
+##https://helm.sh/docs/intro/install/ 참고사이트
+curl https://baltocdn.com/helm/signing.asc | gpg --dearmor | sudo tee /usr/share/keyrings/helm.gpg > /dev/null
+sudo apt-get install apt-transport-https --yes
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/helm.gpg] https://baltocdn.com/helm/stable/debian/ all main" | sudo tee /etc/apt/sources.list.d/helm-stable-debian.list
+sudo apt-get update
+sudo apt-get install helm
